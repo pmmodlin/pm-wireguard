@@ -1,0 +1,86 @@
+---
+- name: Gathering facts from all servers and preparing the system
+  hosts: wireguard
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Репозитории обновлены
+      become: true
+      apt:
+        upgrade: yes
+        update_cache: yes
+
+    - name: Необходимые пакеты установлены
+      apt:
+        pkg:
+          - git
+          - neovim
+          - telnet
+          - curl
+          - wget
+          - make
+          - wireguard
+          - qrencode
+          - python3
+          - python3-pip
+          - virtualenv
+        state: present
+
+    - name: Telegram Bot Files
+      copy:
+        src: "{{ playbook_dir }}/telegram_bot/"
+        dest: "{{ wireguard_manager_dir }}/bot/"
+
+    - name: .env файл для Telegram бота
+      template: 
+        src: .env.j2 
+        dest: "{{ wireguard_manager_dir }}/.env"
+
+    - name: wg-manager.sh файл
+      template: 
+        src: wg-manager.sh.j2 
+        dest: "{{ wireguard_manager_dir }}/wg-manager.sh"
+
+    - name: .service файл для Telegram бота
+      template: 
+        src: wg-manager.service.j2 
+        dest: "/etc/systemd/system/wg-manager.service"
+
+    - name: Права на выполнение скрипта wg-manager.sh
+      file:
+        path: "{{ wireguard_manager_dir }}/wg-manager.sh"
+        mode: '0777'
+
+    - name: Ссылка в /usr/bin на wg-manager.sh
+      file:
+        src: "{{ wireguard_manager_dir }}/wg-manager.sh"
+        dest: "{{ system_dir }}/wg-manager"
+        state: link
+
+    - name: Инициализация wg-manager
+      shell:
+        cmd: wg-manager init
+        chdir: "{{ wireguard_manager_dir }}"
+      register: output
+      # failed_when: output.rc != 12 and output.rc !=0
+
+    - name: Инициализация venv
+      shell:
+        cmd: python3 -m virtualenv venv
+        chdir: "{{ wireguard_manager_dir }}"
+
+    - name: Зависимости для python
+      shell:
+        cmd: $PWD/venv/bin/pip install {{ pip_requirements }}
+        chdir: "{{ wireguard_manager_dir }}"
+
+    - name: Сервис wg-manager запущен и добавлен в автозагрузку
+      systemd:
+        name: wg-manager
+        daemon_reload: true
+        state: restarted
+        enabled: true
+        masked: no

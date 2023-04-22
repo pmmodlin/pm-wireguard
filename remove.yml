@@ -1,0 +1,46 @@
+---
+- name: Gathering facts from all servers and preparing the system
+  hosts: wireguard
+  become: true
+  gather_facts: true
+  vars_files:
+    - vars/main.yml
+
+  tasks:
+    - name: Сервис wg-manager остановлен
+      systemd:
+        name: wg-manager
+        state: stopped
+        enabled: false
+      ignore_errors: true
+
+    - name: Пакеты удалены
+      apt:
+        pkg:
+          - wireguard
+          - qrencode
+        state: absent
+
+    - name: Telegram Bot удалён
+      file:
+        path: "{{ wireguard_manager_dir }}"
+        state: absent
+
+    - name: Конфигурации wireguard удалены
+      file:
+        path: "/etc/wireguard"
+        state: absent
+
+    - name: .service файл удалён
+      file: 
+        path: "/etc/systemd/system/wg-manager.service"
+        state: absent
+
+    - name: Ссылка в /usr/bin на wg-manager.sh удалена
+      file:
+        path: "{{ system_dir }}/wg-manager"
+        state: absent
+
+    - name: Daemon-reload
+      systemd:
+        daemon_reload: true

@@ -1,0 +1,8 @@
+[wireguard]
+178.128.38.180
+
+# Connection settings
+[all:vars]
+ansible_connection='ssh'
+ansible_ssh_port='22'
+ansible_user='root'
