@@ -1,5 +1,5 @@
 [wireguard]
-178.128.38.180
+IP вашего сервера
 
 # Connection settings
 [all:vars]
