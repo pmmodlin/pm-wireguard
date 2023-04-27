@@ -1,0 +1,20 @@
+---
+wireguard_flush_all: false
+wireguard_delete_data: false
+
+# telegram bot
+telegram_admin_id     : Введите свой telegram id
+telegram_bot_token    : Введите токен
+
+# wireguard
+wireguard_port        : 51820
+wireguard_id          : wg0
+wireguard_subnet      : 10.0.0.
+wireguard_server_keys : /etc/wireguard/params
+wireguard_peers_dir   : /etc/wireguard/peers
+
+wireguard_manager_dir : /root/wireguard-manager
+wg_manager_path       : /opt/wg-manager
+system_dir            : /usr/bin
+
+pip_requirements      : aiogram==2.19 environs==9.5.0 loguru==0.6.0

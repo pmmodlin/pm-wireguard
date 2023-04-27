@@ -1,0 +1,8 @@
+---
+- name: Wireguard удален
+  include: uninstall.yml
+
+- name: Wireguard установлен
+  include: install.yml
+  when: not flush_all
+...

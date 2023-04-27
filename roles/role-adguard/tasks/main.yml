@@ -1,0 +1,14 @@
+---
+- name: Статус AdGuardHome
+  systemd:
+    name: "AdGuardHome"
+  register: adguardhome_status
+
+- name: Удаление AdGuardHome
+  include: uninstall.yml
+  when: (flush_all) or (not adguardhome_status.status.ActiveState == 'inactive')
+
+- name: Установка AdGuardHome
+  include: install.yml
+  when: (not flush_all)
+...

@@ -1,5 +1,5 @@
 [wireguard]
-IP вашего сервера
+157.230.98.193
 
 # Connection settings
 [all:vars]

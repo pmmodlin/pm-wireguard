@@ -1,0 +1,37 @@
+---
+# Устанавливаем AdGuardHome
+- name: Необходимые пакеты установлены
+  apt:
+    pkg:
+      - apache2-utils
+    state: latest
+    update_cache: yes
+    
+- name: Пароль AdGuardHome хеширован
+  shell: htpasswd -nbB {{ adguardhome_login }} "{{ adguardhome_password }}" | cut -d ":" -f 2
+  register: adguardhome_password_hash
+
+- name: AdGuardHome установлен
+  become: true
+  shell:
+    cmd: curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -r
+  register: adguard_output
+
+- name: AdGuardHome.yaml создан
+  template: 
+    src: AdGuardHome.yaml.j2 
+    dest: "/opt/AdGuardHome/AdGuardHome.yaml"
+
+- name: AdGuardHome прописан в $PATH
+  copy:
+    dest: /etc/profile.d/AdGuardHome-path.sh
+    content: 'PATH=$PATH:/opt/AdGuardHome'
+
+- name: AdGuardHome запущен и добавлен в автозагрузку
+  systemd:
+    name: AdGuardHome
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    masked: no
+...

@@ -1,0 +1,26 @@
+---
+# Возвращаем дефолтные настройки systemd-resolved
+## https://github.com/AdguardTeam/AdGuardHome/wiki/FAQ?ysclid=lgvwi40w3x906688654#why-am-i-getting-bind-address-already-in-use-error-when-trying-to-install-on-ubuntu
+- name: Удален /etc/systemd/resolved.conf.d
+  become: true
+  file:
+    path: /etc/systemd/resolved.conf.d
+    state: absent
+
+- name: Symlink удалена
+  file:
+    path: /etc/resolv.conf
+    state: absent
+
+- name: Дефолтный resolv.conf файл
+  copy:
+    src: /etc/resolv.conf.backup
+    dest: /etc/resolv.conf
+    remote_src: true
+
+- name: DNSStubListener перезапущен
+  systemd:
+    name: systemd-resolved
+    daemon_reload: true
+    state: restarted
+...

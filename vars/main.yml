@@ -1,15 +1,32 @@
-telegram_admin_id     : Введите свой telegram id
-telegram_bot_token    : Введите токен
+flush_all                     : false
 
-wireguard_port        : 51820
-wireguard_id          : wg0
-wireguard_subnet      : 10.0.0.
-wireguard_server_keys : /etc/wireguard/params
-wireguard_peers_dir   : /etc/wireguard/peers
+dot  : true
+doh  : true
+odoh : true
 
-clients_dnss          : 208.67.222.222,208.67.220.220
+# AdGuardHome
+adguardhome_url               : pm-adguard.org
+adguardhome_login             : pmodlin
+adguardhome_password          : Bi5Qu1ts59
 
-wireguard_manager_dir : /root/wireguard-manager
-system_dir            : /usr/bin
+# Wireguard
+wireguard_port                : 51820
+wireguard_interface           : wg0
+wireguard_subnet              : 10.0.0.
 
-pip_requirements      : aiogram==2.19 environs==9.5.0 loguru==0.6.0
+## Telegram Bot
+telegram_admin_id             : 142551536
+telegram_bot_token            : 6254150749:AAGbBimYPZVwQGUjLIpNuo9Efv8B4VTVID8
+
+# Unbound
+unbound_install               : true
+## Если "dnscrypt_proxy_install: true" - то включится настройка для DNScrypt Proxy и все нижестоящие переменные должны быть "false"
+unbound_dns_quad9_standard    : false
+unbound_dns_quad9_ecs_support : false
+unbound_dns_opendns           : false
+unbound_dns_cloudflare        : false
+unbound_dns_google            : false
+unbound_dns_adguard           : false
+
+# DNScrypt Proxy
+dnscrypt_proxy_install        : true

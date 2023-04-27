@@ -1,0 +1,6 @@
+---
+flush_all: false
+
+# AdGuardHome
+adguardhome_login     : логин администратора
+adguardhome_password  : пароль администратора

@@ -1,0 +1,12 @@
+[Unit]
+Description=Wireguard Manager Telegram Bot
+After=network.target
+
+[Service]
+Type=simple
+WorkingDirectory=/opt/wg-manager
+ExecStart=/opt/wg-manager/venv/bin/python3 /opt/wg-manager/bot/app.py
+Restart=on-failure
+
+[Install]
+WantedBy=default.target

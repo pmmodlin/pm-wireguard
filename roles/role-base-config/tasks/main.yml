@@ -1,0 +1,30 @@
+---
+- name: Включено отображение цветов для пользователя
+  become: true
+  lineinfile:
+    dest: "{{ ansible_env.HOME }}/.bashrc"
+    regexp: "^#force_color_prompt=yes$"
+    line: "force_color_prompt=yes"
+
+- name: Обновление пакетов
+  become: true
+  apt:
+    upgrade: yes
+    update_cache: yes
+    cache_valid_time: 86400 #One day
+
+- name: Частоиспользуемые пакеты установлены
+  become: true
+  apt:
+    pkg:
+      - neovim
+      - telnet
+      - curl
+      - wget
+      - tree
+      - ncat
+      - ntp
+      - net-tools
+    state: present
+    update_cache: yes
+...

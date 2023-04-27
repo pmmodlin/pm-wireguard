@@ -1,0 +1,33 @@
+---
+- name: Сервис WG-Manager остановлен
+  systemd:
+    name: wg-manager
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: Wireguard удален
+  apt:
+    pkg:
+      - wireguard
+    state: absent
+
+- name: Telegram Bot удалён
+  file:
+    path: "/opt/wg-manager"
+    state: absent
+
+- name: Конфигурации wireguard удалены
+  file:
+    path: "/etc/wireguard"
+    state: absent
+
+- name: .service файл удалён
+  file: 
+    path: "/etc/systemd/system/wg-manager.service"
+    state: absent
+
+- name: Daemon-reload
+  systemd:
+    daemon_reload: true
+...
