@@ -1,5 +1,6 @@
 [wireguard]
-157.230.98.193
+# Введите IP или DNS своего сервера
+#192.168.0.1
 
 # Connection settings
 [all:vars]

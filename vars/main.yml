@@ -1,26 +1,27 @@
-flush_all                     : false
-
-dot  : true
-doh  : true
-odoh : true
+flush                         : false
+flush_data                    : false
 
 # AdGuardHome
-adguardhome_url               : pm-adguard.org
-adguardhome_login             : pmodlin
-adguardhome_password          : Bi5Qu1ts59
+adguardhome_url               : agh.org
+adguardhome_login             : <логин adguard home>
+adguardhome_password          : <пароль adguard home>
+adguardhome_dns               : 127.0.0.1:53,127.0.0.5353 # 127.0.0.1:53 - DoT, 127.0.0.5353 - o/DoH
+
+# CertBot
+certbot_email                 : <email>
 
 # Wireguard
-wireguard_port                : 51820
 wireguard_interface           : wg0
+wireguard_port                : 51820
 wireguard_subnet              : 10.0.0.
 
 ## Telegram Bot
-telegram_admin_id             : 142551536
-telegram_bot_token            : 6254150749:AAGbBimYPZVwQGUjLIpNuo9Efv8B4VTVID8
+telegram_admin_id             : <ID администратора>
+telegram_bot_token            : <токен бота>
 
 # Unbound
 unbound_install               : true
-## Если "dnscrypt_proxy_install: true" - то включится настройка для DNScrypt Proxy и все нижестоящие переменные должны быть "false"
+
 unbound_dns_quad9_standard    : false
 unbound_dns_quad9_ecs_support : false
 unbound_dns_opendns           : false
@@ -30,3 +31,10 @@ unbound_dns_adguard           : false
 
 # DNScrypt Proxy
 dnscrypt_proxy_install        : true
+
+dnscrypt_proxy_odoh           : true
+dnscrypt_proxy_doh            : false
+
+dnscrypt_proxy_odoh_default   : true
+dnscrypt_proxy_odoh_cloudflare: false
+dnscrypt_proxy_doh_quad9      : false

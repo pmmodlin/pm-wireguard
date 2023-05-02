@@ -10,20 +10,25 @@
     - name: Базовая настройка сервера ===================
       include_role:
         name: role-base-config
+      when: (not flush) and (not flush_data)
         
   tasks:
-    - name: Adguard =====================================
-      include_role:
-        name: role-adguard
     - name: Wireguard ===================================
       include_role:
         name: role-wireguard
-    # - name: DNScrypt ====================================
-    #   include_role:
-    #     name: role-dnscrypt
-    - name: Unbound =====================================
+    - name: Adguard =====================================
+      include_role:
+        name: role-adguard
+    - name: DNScrypt ====================================
+      include_role:
+        name: role-dnscrypt
+    - name: Unboud ======================================
       include_role:
         name: role-unbound
+
+    - name: Перезагрузка сервера
+      ansible.builtin.reboot:
+        reboot_timeout: 3600
 
     - name: Installed
       debug:
@@ -33,7 +38,7 @@
           - "    Для настройки подключения воспользуйтесь своим telegram ботом"
           - "    Консоль администратора AdGuardHome доступна по пути {{ wireguard_subnet }}1 только при подключении через VPN"
           - "################################################################################################################"
-      when: (not flush_all)
+      when: (not flush) and (not flush_data)
 
     - name: Removed
       debug:
@@ -41,4 +46,4 @@
           - "################################################################################################################"
           - "Удаление завершена успешно!"
           - "################################################################################################################"
-      when: (flush_all)
+      when: (flush) or (flush_data)

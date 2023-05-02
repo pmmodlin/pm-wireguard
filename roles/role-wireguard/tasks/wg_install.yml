@@ -1,0 +1,9 @@
+---
+- name: Wireguard установлен
+  become: true
+  apt:
+    pkg:
+      - wireguard
+    state: latest
+    update_cache: yes
+...

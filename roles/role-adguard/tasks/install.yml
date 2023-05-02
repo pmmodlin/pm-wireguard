@@ -1,35 +1,53 @@
 ---
-# Устанавливаем AdGuardHome
 - name: Необходимые пакеты установлены
   apt:
     pkg:
       - apache2-utils
     state: latest
     update_cache: yes
-    
-- name: Пароль AdGuardHome хеширован
-  shell: htpasswd -nbB {{ adguardhome_login }} "{{ adguardhome_password }}" | cut -d ":" -f 2
-  register: adguardhome_password_hash
 
-- name: AdGuardHome установлен
+- name: AdGuardHome
   become: true
   shell:
     cmd: curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -r
   register: adguard_output
 
-- name: AdGuardHome.yaml создан
+- name: Переименование AdGuardHome в agh
+  become: true
+  copy:
+    src: /opt/AdGuardHome/
+    dest: /opt/agh
+    remote_src: true
+
+- name: Исходники удалены
+  file:
+    path: /opt/AdGuardHome
+    state: absent
+
+- name: Пароль AdGuardHome Server хеширован
+  shell: htpasswd -nbB {{ adguardhome_login }} "{{ adguardhome_password }}" | cut -d ":" -f 2
+  register: adguardhome_password_hash
+
+- name: AdGuardHome.yaml создан для Server
   template: 
     src: AdGuardHome.yaml.j2 
-    dest: "/opt/AdGuardHome/AdGuardHome.yaml"
+    dest: "/opt/agh/AdGuardHome.yaml"
 
-- name: AdGuardHome прописан в $PATH
+- name: agh.service
+  become: true
   copy:
-    dest: /etc/profile.d/AdGuardHome-path.sh
-    content: 'PATH=$PATH:/opt/AdGuardHome'
+    src: agh.service
+    dest: /etc/systemd/system/agh.service
+
+- name: AdGuardHome.service удалён
+  become: true
+  file:
+    path: /etc/systemd/system/AdGuardHome.service
+    state: absent
 
 - name: AdGuardHome запущен и добавлен в автозагрузку
   systemd:
-    name: AdGuardHome
+    name: agh
     daemon_reload: true
     state: restarted
     enabled: true

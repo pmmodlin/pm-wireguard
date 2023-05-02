@@ -1,25 +1,24 @@
 #!/usr/bin/env bash
 
 WG_INTERFACE={{ wireguard_interface }}
-WG_PREFIX=/etc/wireguard
-WG_CONF=$WG_PREFIX/$WG_INTERFACE.conf
-WG_PARAMS=/etc/wireguard/params
-WG_PEERS=/etc/wireguard/peers
-
 WG_SUBNET={{ wireguard_subnet }}
-WG_ADDR="$WG_SUBNET"1
+WG_ADDR={{ wireguard_subnet }}1
 WG_PORT={{ wireguard_port }}
 
-CLIENT_DNSs={{ wireguard_subnet }}1
+CLIENT_DNS={{ wireguard_subnet }}1
+
+WG_CONF=/etc/wireguard/$WG_INTERFACE.conf
+WG_PARAMS=/etc/wireguard/config
+WG_PEERS=/etc/wireguard/peers
 
 bye() {
-    echo "$0: Error: $1" >&2
+    echo "$0: Ошибка: $1" >&2
     exit $2
 }
 
 is_root() {
     if [ "${EUID}" -ne 0 ]; then
-        bye "Запустите скрипт от пользователя в правами sudo" 1
+        bye "Запустите скрипт от пользователя c правами sudo" 1
     fi
 }
 
@@ -32,14 +31,22 @@ check_requirements() {
     is_exists_requirements "qrencode"
 }
 
+check_exist_config() {
+    if [ -f "/etc/wireguard/wg0.conf" ]; then
+        echo "Конфигурационный файл уже существует!"
+        exit 100
+    fi
+}
+
 check_all() {
     is_root
     check_requirements
+    check_exist_config
 }
 
 write_params() {
-    echo "SERVER_PRIVATE_KEY=$SERVER_PRIVATE_KEY" >> "$WG_PARAMS"
-    echo "SERVER_PUBLIC_KEY=$SERVER_PUBLIC_KEY" >> "$WG_PARAMS"
+    echo -e "SERVER_PRIVATE_KEY=$SERVER_PRIVATE_KEY" > $WG_PARAMS
+    echo -e "SERVER_PUBLIC_KEY=$SERVER_PUBLIC_KEY"   > $WG_PARAMS
 }
 
 generate_server_keys() {
@@ -48,12 +55,12 @@ generate_server_keys() {
 }
 
 create_config_file() {
-    echo "[Interface]" > $WG_CONF
-    echo "PrivateKey = $SERVER_PRIVATE_KEY" >> $WG_CONF
-    echo "Address = $WG_ADDR/24" >> $WG_CONF
-    echo "ListenPort = $WG_PORT" >> $WG_CONF
-    echo "PostUp = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE" >> $WG_CONF
-    echo "PostDown = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE" >> $WG_CONF
+    echo -e "[Interface]" > $WG_CONF
+    echo -e "PrivateKey = $SERVER_PRIVATE_KEY" >> $WG_CONF
+    echo -e "Address    = $WG_ADDR/24" >> $WG_CONF
+    echo -e "ListenPort = $WG_PORT" >> $WG_CONF
+    echo -e "PostUp     = iptables -A FORWARD -i %i -j ACCEPT; iptables -t nat -A POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE" >> $WG_CONF
+    echo -e "PostDown   = iptables -D FORWARD -i %i -j ACCEPT; iptables -t nat -D POSTROUTING -o {{ ansible_default_ipv4.interface }} -j MASQUERADE" >> $WG_CONF
 }
 
 enable_service() {
@@ -68,8 +75,9 @@ restart_service() {
 
 enable_ip_forwarwing() {
     test -z "$(grep "^net.ipv4.ip_forward=1" /etc/sysctl.conf)" && \
-    echo -e "net.ipv4.ip_forward=1" >> /etc/sysctl.conf && sysctl -p && \
-    echo -e "net.core.rmem_max=4194304\nnet.core.wmem_max=4194304" >> /etc/sysctl.conf && sysctl -p 
+    echo -e "net.ipv4.ip_forward=1" >> /etc/sysctl.conf && \
+    echo -e "net.core.rmem_max=4194304" >> /etc/sysctl.conf && \
+    echo -e "net.core.wmem_max=4194304" >> /etc/sysctl.conf && sysctl -p
 }
 
 get_global_ipv4() {
@@ -81,7 +89,7 @@ is_exists_client_config() {
 }
 
 validate_client_name() {
-    [[ "$1" =~ ^[a-zA-Z0-9_-]+$  ]] || bye "Неверное имя клиента '$1'" 11
+    [[ "$1" =~ ^[a-zA-Z0-9_-]+$  ]] || bye "Неверное имя пира '$1'" 11
 }
 
 add_client() {
@@ -92,28 +100,28 @@ add_client() {
     client_psk=$(wg genpsk)
     most_recent_client_ip=$(grep -A 3 '\[Peer\]' $WG_CONF | grep -oE '[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}' | awk -F '.' '{print $4}' | sort -nr | head -n 1)
 
-    test "$most_recent_client_ip" -gt 253 && bye "Only 253 peers" 24 # 24 subnet
+    test "$most_recent_client_ip" -gt 253 && bye "Доступно только 253 пира" 24 # 24 subnet
 
     # most recent client address + 1
     test -z "$most_recent_client_ip" && client_ip=$WG_SUBNET"2" || client_ip=$WG_SUBNET$(("$most_recent_client_ip" + 1))
     echo -e "\n# Client $1\n[Peer]\nPublicKey = $client_public_key\nPresharedKey = $client_psk\nAllowedIPs = $client_ip/32" >> $WG_CONF
     restart_service
 
-    cat /opt/AdGuardHome/AdGuardHome.yaml | sed "s/^  persistent\:.*/  persistent\:\n    - safe_search:\n        enabled: false\n        bing: true\n        duckduckgo: true\n        google: true\n        pixabay: true\n        yandex: true\n        youtube: true\n      name: $1\n      tags: []\n      ids:\n        - $client_ip\n      blocked_services: []\n      upstreams: []\n      use_global_settings: true\n      filtering_enabled: false\n      parental_enabled: false\n      safebrowsing_enabled: false\n      use_global_blocked_services: true\n      ignore_querylog: false\n      ignore_statistics: false/g" | tee tmp.yaml
-    cp tmp.yaml /opt/AdGuardHome/AdGuardHome.yaml
-    systemctl restart AdGuardHome
+    cat /opt/agh/AdGuardHome.yaml | sed "s/^  persistent\:.*/  persistent\:\n    - safe_search:\n        enabled: false\n        bing: true\n        duckduckgo: true\n        google: true\n        pixabay: true\n        yandex: true\n        youtube: true\n      name: $1\n      tags: []\n      ids:\n        - $client_ip\n      blocked_services: []\n      upstreams: []\n      use_global_settings: true\n      filtering_enabled: false\n      parental_enabled: false\n      safebrowsing_enabled: false\n      use_global_blocked_services: true\n      ignore_querylog: false\n      ignore_statistics: false/g" | tee tmp.yaml
+    mv tmp.yaml /opt/agh/AdGuardHome.yaml
+    systemctl restart agh
 
-    echo "[Interface]
-PrivateKey = $client_private_key
-Address = $client_ip/32
-DNS = $CLIENT_DNSs
-
-[Peer]
-PublicKey = $SERVER_PUBLIC_KEY
-PresharedKey = $client_psk
-Endpoint = $(get_global_ipv4):$WG_PORT
-AllowedIPs = 0.0.0.0/0
-PersistentKeepalive = 20" | tee $WG_PEERS/"$1".conf
+    echo -e "[Interface]"                             > $WG_PEERS/"$1".conf
+    echo -e "PrivateKey = $client_private_key"       >> $WG_PEERS/"$1".conf
+    echo -e "Address = $client_ip/32"                >> $WG_PEERS/"$1".conf
+    echo -e "DNS = $CLIENT_DNS"                      >> $WG_PEERS/"$1".conf
+    echo -e ""                                       >> $WG_PEERS/"$1".conf
+    echo -e "[Peer]"                                 >> $WG_PEERS/"$1".conf
+    echo -e "PublicKey = $SERVER_PUBLIC_KEY"         >> $WG_PEERS/"$1".conf
+    echo -e "PresharedKey = $client_psk"             >> $WG_PEERS/"$1".conf
+    echo -e "Endpoint = $(get_global_ipv4):$WG_PORT" >> $WG_PEERS/"$1".conf
+    echo -e "AllowedIPs = 0.0.0.0/0"                 >> $WG_PEERS/"$1".conf
+    echo -e "PersistentKeepalive = 20"               >> $WG_PEERS/"$1".conf
 }
 
 delete_client() {
@@ -121,10 +129,10 @@ delete_client() {
     rm "$WG_PEERS/$1.conf"
     sed -i "/^# Client $1\$/,/^$/d" "$WG_CONF"
     restart_service
-    # /usr/bin/yq "del(.clients.persistent.[] | select(.name == \"$1\"))" /opt/AdGuardHome/AdGuardHome.yaml -P | tee tmp.yaml
-    cat /opt/AdGuardHome/AdGuardHome.yaml | sed "s/name: $1/name: $1-renamed/g" | tee tmp.yaml
-    cp tmp.yaml /opt/AdGuardHome/AdGuardHome.yaml
-    systemctl restart AdGuardHome
+    # /usr/bin/yq "del(.clients.persistent.[] | select(.name == \"$1\"))" /opt/agh/AdGuardHome.yaml -P | tee tmp.yaml
+    cat /opt/agh/AdGuardHome.yaml | sed "s/name: $1/name: $1-removed/g" | tee tmp.yaml
+    cp tmp.yaml /opt/agh/AdGuardHome.yaml
+    systemctl restart agh
 }
 
 get_client() {
@@ -149,30 +157,30 @@ show_client_qrcode() {
 cmd_add_client() {
     add_client "$1" >/dev/null
     show_client_qrcode "$1" | less -R
-    echo "It also available in $WG_PEERS/$1.conf"
+    echo "Конфигурация также доступна тут: $WG_PEERS/$1.conf"
 }
 
 cmd_add_client_and_get_client_qrcode_png() {
-    add_client "$1" >/dev/null
+    add_client "$1" > /dev/null
     get_client_qrcode_png "$1"
 }
 
 cmd_usage() {
-    echo "Usage $0"
-    echo -e "\tinit            - Инициализация wireguard"
-    echo -e "\tadd <name>      - Создать клиента"
-    echo -e "\tget <name>      - Показать QR-код клиента"
-    echo -e "\trm <name>       - Удалить клиента"
-    echo -e "\tls              - Список клиентов"
-    echo -e "\tget_tg <name>   - Get client qrcode in bytes"
-    echo -e "\tget_file <name> - Get client config file"
-    echo -e "\tadd_tg <name>   - Add client and get qrcode in bytes"
+    echo -e "Использование $0"
+    echo -e "\tinit            - Инициализация WG-Manager"
+    echo -e "\tls              - Список пиров"
+    echo -e "\tadd <name>      - Добавить пир"
+    echo -e "\trm <name>       - Удалить пир"
+    echo -e "\tget <name>      - Показать QR-код пира"
+    echo -e "\tget_tg <name>   - Показать QR-код пира \"in bytes\""
+    echo -e "\tget_file <name> - Показать конфигурационный файл пира"
+    echo -e "\tadd_tg <name>   - Добавить пир и отобразить его QR-код \"in bytes\""
 }
 
 cmd_init() {
     check_all
     mkdir -p $WG_PEERS
-    chmod 600 -R $WG_PREFIX
+    chmod 600 -R /etc/wireguard
     generate_server_keys
     write_params
     create_config_file

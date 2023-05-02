@@ -1,0 +1,29 @@
+---
+- name: Unboud остановлен и убран из автозагрузки
+  systemd:
+    name: unbound
+    daemon_reload: true
+    state: stopped
+    enabled: false
+    masked: no
+
+- name: Unbound удалён
+  apt:
+    pkg:
+      - unbound
+    state: absent
+
+- name: Systemd-resolved запущен и добавлен в автозагрузку
+  systemd:
+    name: systemd-resolved
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    masked: false
+
+- name: Cronjob удалён
+  cron:
+    name: "Update unbound config"
+    job: "sudo curl https://www.internic.net/domain/named.root --create-dirs -o /var/lib/unbound/root.hints"
+    state: absent
+...

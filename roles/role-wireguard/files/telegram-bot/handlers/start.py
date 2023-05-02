@@ -9,7 +9,7 @@ from keyboards import menu
 async def base_handler(message: types.Message, answer_text: str, **kwargs):
     state = dp.current_state(user=message.from_user.id)
     await state.reset_state()
-    logger.info(f"{message.text} from user {message.from_user.username}:{message.from_user.id}")
+    logger.info(f"{message.text}. Пользователь {message.from_user.username}:{message.from_user.id}")
     await message.answer(answer_text, **kwargs)
 
 

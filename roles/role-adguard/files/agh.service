@@ -1,0 +1,20 @@
+[Unit]
+Description=AdGuard Home
+ConditionFileIsExecutable=/opt/agh/AdGuardHome
+After=syslog.target network-online.target
+
+[Service]
+StartLimitInterval=5
+StartLimitBurst=10
+ExecStartPre=/bin/mkdir -p /var/log/
+ExecStart=/opt/agh/AdGuardHome "-s" "run"
+WorkingDirectory=/opt/agh
+StandardOutput=file:/var/log/agh.out
+StandardError=file:/var/log/agh.err
+
+Restart=always
+RestartSec=10
+EnvironmentFile=-/etc/sysconfig/agh
+
+[Install]
+WantedBy=multi-user.target

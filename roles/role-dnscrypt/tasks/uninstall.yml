@@ -1,0 +1,27 @@
+---
+- name: DNScrypt остановлен и убран из автозагрузки
+  systemd:
+    name: dnscrypt-proxy
+    daemon_reload: true
+    state: stopped
+    enabled: false
+    masked: no
+  ignore_errors: true
+
+- name: Удалена директория /var/cache/dnscrypt-proxy
+  become: true
+  file:
+    path: /var/cache/dnscrypt-proxy
+    state: absent
+
+- name: Системная директори DNScrypt удалена
+  become: true
+  file:
+    path: /opt/dnscrypt-proxy
+    state: absent
+
+- name: Старый .service файл удалён
+  file:
+    path: /etc/systemd/system/dnscrypt-proxy.service
+    state: absent
+...

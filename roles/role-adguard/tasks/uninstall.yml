@@ -1,20 +1,27 @@
 ---
 - name: AdGuardHome остановлен и убран из автозагрузки
   systemd:
-    name: AdGuardHome
+    name: agh
     daemon_reload: true
     state: stopped
     enabled: false
     masked: no
   ignore_errors: true
 
-- name: AdGuardHome удалён
+- name: Service файл удалён
   become: true
-  shell:
-    cmd: curl -s -S -L https://raw.githubusercontent.com/AdguardTeam/AdGuardHome/master/scripts/install.sh | sh -s -- -u
+  file:
+    path: /systemd/system/agh
+    state: absent
 
 - name: AdGuardHome убран из $PATH
   file:
-    path: /etc/profile.d/AdGuardHome-path.sh
+    path: /usr/bin/agh
+    state: absent
+
+- name: AdGuardHome удалён
+  become: true
+  file:
+    path: /opt/agh
     state: absent
 ...

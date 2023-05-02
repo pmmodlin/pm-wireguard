@@ -1,0 +1,70 @@
+---
+- name: Необходимые пакеты установлены
+  become: true
+  apt:
+    pkg:
+      - make
+      - qrencode
+      - python3
+      - python3-pip
+      - virtualenv
+    state: present
+    update_cache: yes
+    
+- name: Файлы WG-Manager`а скопированы на хост
+  copy:
+    src: "telegram-bot/"
+    dest: "/opt/wg-manager/bot/"
+
+- name: .env файл создан
+  template: 
+    src: ".env.j2"
+    dest: "/opt/wg-manager/.env"
+
+- name: wg-manager.sh файл создан
+  template: 
+    src: "wg-manager.sh.j2"
+    dest: "/opt/wg-manager/wg-manager"
+
+- name: Права на запуск wg-manager
+  file:
+    path: "/opt/wg-manager/wg-manager"
+    mode: '0777'
+
+- name: WG-Manager в $PATH
+  copy:
+    dest: "/etc/profile.d/wg-manager-path.sh"
+    content: "PATH=$PATH:/opt/wg-manager"
+
+- name: WG-Manager инициализирован
+  shell:
+    cmd: "/opt/wg-manager/wg-manager init"
+    chdir: "/opt/wg-manager"
+  register: result
+  failed_when:
+    - result.rc != 0
+    - result.rc != 100
+
+- name: venv инизиализирован
+  shell:
+    cmd: "python3 -m virtualenv venv"
+    chdir: "/opt/wg-manager"
+
+- name: Зависимости для python установлены
+  shell:
+    cmd: "$PWD/venv/bin/pip install aiogram==2.19 environs==9.5.0 loguru==0.6.0"
+    chdir: "/opt/wg-manager"
+
+- name: .service файл создан
+  copy: 
+    src: "wg-manager.service"
+    dest: "/etc/systemd/system/wg-manager.service"
+
+- name: WG-Manager запущен и добавлен в автозагрузку
+  systemd:
+    name: wg-manager
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    masked: no
+...

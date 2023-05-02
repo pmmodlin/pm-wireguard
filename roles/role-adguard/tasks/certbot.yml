@@ -1,0 +1,30 @@
+- name: CertBot установлен
+  become: true
+  apt:
+    pkg:
+      - certbot
+    state: present
+    update_cache: yes
+  retries: 20
+  delay: 5
+  register: result
+  until: result.failed == false
+
+- name: Получен сертификат
+  expect:
+    command: certbot certonly --standalone
+    responses:
+      Enter email address: "{{ certbot_email }}"
+      Please read the Terms of Service at: "y"
+      Would you be willing: "n"
+      Please enter the domain name: "{{ adguardhome_url }}"
+      Renew & replace the certificate: "1"
+      NEXT STEPS: return
+  when: (not flush) and (not flush_data)
+  ignore_errors: true
+
+# - name: Сертификат удалён
+#   file:
+#     path: /etc/letsencrypt/live/pm-adguard.duckdns.org
+#     state: absent
+#   when: (flush_data)

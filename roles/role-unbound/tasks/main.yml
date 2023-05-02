@@ -1,0 +1,9 @@
+---
+- name: Удаление Unbound
+  include: uninstall.yml
+  when: (flush_all) or (not unbound_install)
+
+- name: Установка Unbound
+  include: install.yml
+  when: (not flush_all) or (not unbound_install)
+...

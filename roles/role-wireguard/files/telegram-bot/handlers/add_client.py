@@ -40,12 +40,12 @@ async def get_client_2(message: Message, state: FSMContext):
             await message.answer(Text.ERROR_12.format(client_name=client_name))
         elif command_result.returncode == ReturnCodes.SubnetError:
             await message.answer(Text.ERROR_24)
-        logger.error(f"adding client {message.text} from user {message.from_user.username}:{message.from_user.id}")
+        logger.error(f"Добавление клиента {message.text} пользователем {message.from_user.username}:{message.from_user.id}")
     else:
         photo = put_bytes_to_file(command_result.stdout)
         await message.reply(Text.CLIENT_ADDED.format(client_name=client_name))
         await message.answer_photo(photo=photo)
-        logger.info(f"added client {message.text} from user {message.from_user.username}:{message.from_user.id}")
+        logger.info(f"Клиент добавлен {message.text} пользователем {message.from_user.username}:{message.from_user.id}")
 
     await message.answer(Text.MENU, reply_markup=menu)
     await state.finish()

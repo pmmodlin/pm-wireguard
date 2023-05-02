@@ -1,0 +1,9 @@
+---
+- name: Удаление DNScrypt
+  include: uninstall.yml
+  when: (flush_all)
+
+- name: Установка DNScrypt
+  include: install.yml
+  when: (not flush_all)
+...

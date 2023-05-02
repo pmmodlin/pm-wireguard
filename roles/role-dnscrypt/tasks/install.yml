@@ -1,0 +1,68 @@
+---
+- name: Создана директория /var/cache/dnscrypt-proxy
+  become: true
+  file:
+    path: /var/cache/dnscrypt-proxy
+    state: directory
+
+# https://github.com/DNSCrypt/dnscrypt-proxy/releases/
+- name: Архив с DNScrypt скачан
+  become: true
+  get_url:
+    url: https://github.com/DNSCrypt/dnscrypt-proxy/releases/download/2.1.4/dnscrypt-proxy-linux_x86_64-2.1.4.tar.gz
+    dest: /opt/dnscrypt-proxy-linux_x86_64-2.1.4.tar.gz
+    force: true
+
+- name: DNScrypt разархивирован 1
+  become: true
+  unarchive:
+    src: /opt/dnscrypt-proxy-linux_x86_64-2.1.4.tar.gz
+    dest: /opt
+    remote_src: yes
+
+- name: DNScrypt разархивирован 2
+  become: true
+  copy:
+    src: /opt/linux-x86_64/
+    dest: /opt/dnscrypt-proxy
+    remote_src: yes
+
+- name: DNScrypt разархивирован 3
+  file:
+    path: /opt/linux-x86_64
+    state: absent
+
+- name: Архив удалён
+  file:
+    path: /opt/dnscrypt-proxy-linux_x86_64-2.1.4.tar.gz
+    state: absent
+
+- name: dnscrypt-proxy.toml создан
+  become: true
+  template: 
+    src: dnscrypt-proxy.toml.j2 
+    dest: "/opt/dnscrypt-proxy/dnscrypt-proxy.toml"
+
+- name: Старый .service файл удалён
+  file:
+    path: /etc/systemd/system/dnscrypt-proxy.service
+    state: absent
+
+- name: Сервис настроен
+  shell:
+    cmd: ./dnscrypt-proxy -service install
+    chdir: /opt/dnscrypt-proxy
+
+- name: Сервис запущен
+  shell:
+    cmd: ./dnscrypt-proxy -service start
+    chdir: /opt/dnscrypt-proxy
+
+- name: DNScrypt запущен и добавлен в автозагрузку
+  systemd:
+    name: dnscrypt-proxy
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    masked: no
+...

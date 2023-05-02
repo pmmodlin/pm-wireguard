@@ -1,0 +1,65 @@
+---
+- name: Unbound установлен
+  apt:
+    pkg:
+      - unbound
+      - resolvconf
+    state: latest
+    update_cache: true
+
+- name: root.hints файл для Unboud обновлён 
+  become: true
+  get_url:
+    url: https://www.internic.net/domain/named.root
+    dest: /var/lib/unbound/root.hints
+    owner: unbound
+    group: unbound
+    force: true
+
+- name: Настроено автоматическое обновление root.hints
+  cron:
+    name: "Update unbound config"
+    minute: "0"
+    hour: "1"
+    day: "1"
+    job: "sudo curl https://www.internic.net/domain/named.root --create-dirs -o /var/lib/unbound/root.hints && chown -R unbound:unbound /var/lib/unbound/"
+
+- name: unbound.conf создан
+  template: 
+    src: unbound.conf.j2 
+    dest: "/etc/unbound/unbound.conf"
+    group: unbound
+    owner: unbound
+
+- name: unbound.conf.d удалён
+  file: 
+    path: "/etc/unbound/unbound.conf.d"
+    state: absent
+
+- name: DNSStubListener отключен
+  become: true
+  lineinfile:
+    dest: "/etc/systemd/resolved.conf"
+    regexp: "^#DNSStubListener=yes$"
+    line: "DNSStubListener=no"
+
+- name: Systemd-resolved остановлен и убран из автозагрузки
+  systemd:
+    name: systemd-resolved
+    daemon_reload: true
+    state: stopped
+    enabled: false
+    masked: true
+
+- name: Unboud запущен и добавлен в автозагрузку
+  systemd:
+    name: unbound
+    daemon_reload: true
+    state: restarted
+    enabled: true
+    masked: false
+
+- name: Перезагрузка сервера
+  ansible.builtin.reboot:
+    reboot_timeout: 3600
+...

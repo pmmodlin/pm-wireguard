@@ -1,0 +1,7 @@
+---
+- name: Wireguard удалён
+  apt:
+    pkg:
+      - wireguard
+    state: absent
+...

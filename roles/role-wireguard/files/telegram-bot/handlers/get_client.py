@@ -111,25 +111,25 @@ async def get_client_3(call: CallbackQuery, state: FSMContext):
         photo.name = client_name + ".png"
         await call.message.answer_photo(photo=photo)
         await call.answer()
-        logger.info(f"get qrcode \"{client_name}\" from user {call.from_user.username}:{call.from_user.id}")
+        logger.info(f"QR-код запрошен \"{client_name}\" пользователем {call.from_user.username}:{call.from_user.id}")
     elif command == "get_file":
         document = put_bytes_to_file(get_config_raw(client_name))
         document.name = client_name + ".conf"
         await call.message.answer_document(document=document)
         await call.answer()
-        logger.info(f"get file \"{client_name}\" from user {call.from_user.username}:{call.from_user.id}")
+        logger.info(f"Файл запрошен \"{client_name}\" пользователем {call.from_user.username}:{call.from_user.id}")
     elif command == "get_raw":
         await call.message.answer(raw_to_html(get_config_raw(client_name).decode()), parse_mode="html")
         await call.answer()
-        logger.info(f"get raw \"{client_name}\" from user {call.from_user.username}:{call.from_user.id}")
+        logger.info(f"RAW запрошен \"{client_name}\" пользователем {call.from_user.username}:{call.from_user.id}")
     elif command == "delete":
         conf_del = InlineKeyboardMarkup(
             inline_keyboard=[
                 [
-                    InlineKeyboardButton(text=ButtonText.CONFIRM, callback_data=f"confirm:{client_name}")
+                    InlineKeyboardButton(text=ButtonText.CONFIRM, callback_data=f"Подтверждено:{client_name}")
                 ],
                 [
-                    InlineKeyboardButton(text=ButtonText.BACK_MENU, callback_data="cancel:_")
+                    InlineKeyboardButton(text=ButtonText.BACK_MENU, callback_data="Отменено:_")
                 ],
             ]
         )
@@ -145,4 +145,4 @@ async def get_client_4(call: CallbackQuery, state: FSMContext):
     await call.message.edit_text(Text.CLIENT_DELETED.format(client_name=client_name), reply_markup=menu)
     await call.answer()
     await state.finish()
-    logger.info(f"deleted client \"{client_name}\" from user {call.from_user.username}:{call.from_user.id}")
+    logger.info(f"Клиент \"{client_name}\" удалён пользователем {call.from_user.username}:{call.from_user.id}")

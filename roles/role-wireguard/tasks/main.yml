@@ -1,8 +1,23 @@
 ---
-- name: Wireguard удален
-  include: uninstall.yml
-
 - name: Wireguard установлен
-  include: install.yml
-  when: not flush_all
+  include: wg_install.yml
+  when: (not flush)
+
+- name: Wireguard удален
+  include: wg_uninstall.yml
+  when: (flush)
+
+- name: Конфигурации Wireguard удалены
+  file:
+    path: "/etc/wireguard"
+    state: absent
+  when: (flush_data)
+
+- name: Telegram Bot удалён
+  include: wgmanager_uninstall.yml
+  when: (flush)
+
+- name: Telegram Bot установлен
+  include: wgmanager_install.yml
+  when: (not flush)
 ...

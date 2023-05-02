@@ -1,0 +1,22 @@
+---
+- name: WG-Manager остановлен и убран из автозагрузки
+  systemd:
+    name: wg-manager
+    state: stopped
+    enabled: false
+  ignore_errors: true
+
+- name: .service файл удалён
+  file: 
+    path: "/etc/systemd/system/wg-manager.service"
+    state: absent
+
+- name: Файлы WG-Manager удалены
+  file:
+    path: "/opt/wg-manager"
+    state: absent
+
+- name: Daemon-reload
+  systemd:
+    daemon_reload: true
+...
